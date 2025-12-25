@@ -4,16 +4,12 @@ trash repo
 
 this was added for trash purposes
 
-
-I tried merging to master and it gave me this, what do I do?
-
 This branch has conflicts that must be resolved
 Use the command line to resolve conflicts before continuing.
 PolyTech.xcodeproj/project.xcworkspace/xcuserdata/bp-19-130-11.xcuserdatad/UserInterfaceState.xcuserstate
 PolyTech.xcodeproj/project.xcworkspace/xcuserdata/bp-19-130-12.xcuserdatad/UserInterfaceState.xcuserstate
 PolyTech.xcodeproj/project.xcworkspace/xcuserdata/bp-19-130-13.xcuserdatad/UserInterfaceState.xcuserstate
 PolyTech.xcodeproj/project.xcworkspace/xcuserdata/bp-19-130-15.xcuserdatad/UserInterfaceState.xcuserstate
-PolyTech/Base.lproj/Main.storyboard
 PolyTech/FatemaHasan/History.storyboard
 PolyTech/FatemaHasan/HistoryViewController.swift
 PolyTech/FatemaHasan/Inventory.storyboard
