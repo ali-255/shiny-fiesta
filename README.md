@@ -4,8 +4,98 @@ trash repo
 
 this was added for trash purposes
 
-Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
-nw_endpoint_flow_failed_with_error [C1 2a00:1450:4019:819::200a.443 failed parent-flow (unsatisfied (No network route))] already failing, returning
-nw_connection_get_connected_socket_block_invoke [C1] Client called nw_connection_get_connected_socket on unconnected nw_connection
-TCP Conn 0x600003329220 Failed : error 0:50 [50]
-Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+in Admin dashboard:
+
+donutChartView.segments = [
+            .init(value: 749, color: UIColor.systemBlue.withAlphaComponent(0.6)),
+            .init(value: 342, color: UIColor.systemBlue),
+            .init(value: 156, color: UIColor.systemGray)
+        ]
+
+in donutChartView:
+
+import UIKit
+
+class DonutChartView: UIView {
+    
+    struct Segment {
+        let value: CGFloat
+        let color: UIColor
+    }
+    
+    var segments: [Segment] = [] {
+        didSet { setNeedsLayout() }
+    }
+    
+    private let ringLayer = CAShapeLayer()
+    private var segmentLayers: [CAShapeLayer] = []
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        commonInit()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonInit()
+    }
+    
+    private func commonInit() {
+        backgroundColor = .clear
+        layer.addSublayer(ringLayer)
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        drawChart()
+    }
+    
+    private func drawChart() {
+        segmentLayers.forEach { $0.removeFromSuperlayer() }
+        segmentLayers.removeAll()
+        
+        let total = segments.reduce(0) { $0 + $1.value }
+        guard total > 0 else { return }
+        
+        let lineWidth: CGFloat = max(10, min(bounds.width, bounds.height) * 0.18)
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let radius = min(bounds.width, bounds.height) / 2 - lineWidth / 2
+        
+        let startAngle: CGFloat = -.pi / 2
+        
+        for seg in segments {
+            let endAngle = startAngle + (2 * .pi) * (seg.value / total)
+            
+            let path = UIBezierPath(
+                arcCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
+            
+            let layer = CAShapeLayer()
+            layer.path = path.cgPath
+            layer.fillColor = UIColor.clear.cgColor
+            layer.strokeColor = seg.color.cgColor
+            layer.lineWidth = lineWidth
+            layer.lineCap = .butt
+            
+            self.layer.addSublayer(layer)
+            segmentLayers.append(layer)
+        }
+        
+        let hole = UIBezierPath(
+            arcCenter: center, radius: radius - lineWidth / 2, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
+        
+        ringLayer.path = hole.cgPath
+        ringLayer.fillColor = UIColor.systemBackground.cgColor
+        ringLayer.strokeColor = UIColor.clear.cgColor
+        
+        
+    }
+
+    /*
+    // Only override draw() if you perform custom drawing.
+    // An empty implementation adversely affects performance during animation.
+    override func draw(_ rect: CGRect) {
+        // Drawing code
+    }
+    */
+
+}
