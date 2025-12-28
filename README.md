@@ -4,98 +4,129 @@ trash repo
 
 this was added for trash purposes
 
-in Admin dashboard:
-
-donutChartView.segments = [
-            .init(value: 749, color: UIColor.systemBlue.withAlphaComponent(0.6)),
-            .init(value: 342, color: UIColor.systemBlue),
-            .init(value: 156, color: UIColor.systemGray)
-        ]
-
-in donutChartView:
+TechniciansViewController:
 
 import UIKit
 
-class DonutChartView: UIView {
+class TechniciansViewController: UITableViewController {
     
-    struct Segment {
-        let value: CGFloat
-        let color: UIColor
+    enum Availability {
+        case available
+        case busy
     }
     
-    var segments: [Segment] = [] {
-        didSet { setNeedsLayout() }
+    struct Technician {
+        let name: String
+        let availability: Availability
+        let tasks: Int
+        let hours: String
     }
     
-    private let ringLayer = CAShapeLayer()
-    private var segmentLayers: [CAShapeLayer] = []
+    private var technicians: [Technician] = [
+        .init(name: "Ali Fadhel", availability: .available, tasks: 142, hours: "6:00 - 12:00"),
+        .init(name: "Fatema Hasan", availability: .busy, tasks: 98, hours: "12:00 - 18:00"),
+        .init(name: "Fatima Ali", availability: .busy, tasks: 187, hours: "18:00 - 24:00")
+    ]
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        commonInit()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        tableView.separatorStyle = .none
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 160
     }
     
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        commonInit()
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        technicians.count
     }
     
-    private func commonInit() {
-        backgroundColor = .clear
-        layer.addSublayer(ringLayer)
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "TechnicianCardCell", for: indexPath) as? TechnicianCardCell else {
+            return UITableViewCell()
+        }
+        
+        let tech = technicians[indexPath.row]
+        
+        cell.nameLabel.text = tech.name
+        cell.tasksValueLabel.text = "\(tech.tasks)"
+        cell.hoursValueLabel.text = tech.hours
+        
+        switch tech.availability {
+        case .available:
+            cell.statusLabel.text = "Available"
+            cell.statusLabel.backgroundColor = UIColor.systemBlue
+            cell.dotView.backgroundColor = UIColor.systemBlue
+        case .busy:
+            cell.statusLabel.text = "busy"
+            cell.statusLabel.backgroundColor = UIColor.systemRed
+            cell.dotView.backgroundColor = UIColor.systemRed
+        }
+        
+        return cell
+        
+        /*
+         // MARK: - Navigation
+         
+         // In a storyboard-based application, you will often want to do a little preparation before navigation
+         override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+         // Get the new view controller using segue.destination.
+         // Pass the selected object to the new view controller.
+         }
+         */
+        
+    }
+}
+
+TechniciansCardCell:
+
+import Foundation
+import UIKit
+
+final class TechnicianCardCell: UITableViewCell {
+    
+    @IBOutlet weak var hoursViewCard: UIView!
+    @IBOutlet weak var tasksViewCard: UIView!
+    @IBOutlet weak var cardView: UIView!
+    @IBOutlet weak var hoursValueLabel: UILabel!
+    @IBOutlet weak var tasksValueLabel: UILabel!
+    @IBOutlet weak var statusLabel: UILabel!
+    @IBOutlet weak var nameLabel: UILabel!
+    @IBOutlet weak var dotView: UIView!
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        
+        selectionStyle = .none
+        
+        dotView.layer.cornerRadius = dotView.bounds.height / 2
+        dotView.clipsToBounds = true
+        
+        statusLabel.layer.cornerRadius = 5
+        statusLabel.clipsToBounds = true
+        
+        cardView.layer.cornerRadius = 16
+        cardView.layer.masksToBounds = false
+        cardView.layer.shadowOpacity = 0.12
+        cardView.layer.shadowRadius = 10
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 6)
+        
+        tasksViewCard.layer.cornerRadius = 14
+        tasksViewCard.layer.masksToBounds = true
+        tasksViewCard.layer.borderWidth = 1
+        tasksViewCard.layer.borderColor = UIColor.systemGray5.cgColor
+        
+        hoursViewCard.layer.cornerRadius = 14
+        hoursViewCard.layer.masksToBounds = true
+        hoursViewCard.layer.borderWidth = 1
+        hoursViewCard.layer.borderColor = UIColor.systemGray5.cgColor
+        
+        contentView.clipsToBounds = false
+        clipsToBounds = false
+        
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        drawChart()
+        
+        dotView.layer.cornerRadius = dotView.bounds.height / 2
     }
-    
-    private func drawChart() {
-        segmentLayers.forEach { $0.removeFromSuperlayer() }
-        segmentLayers.removeAll()
-        
-        let total = segments.reduce(0) { $0 + $1.value }
-        guard total > 0 else { return }
-        
-        let lineWidth: CGFloat = max(10, min(bounds.width, bounds.height) * 0.18)
-        let center = CGPoint(x: bounds.midX, y: bounds.midY)
-        let radius = min(bounds.width, bounds.height) / 2 - lineWidth / 2
-        
-        let startAngle: CGFloat = -.pi / 2
-        
-        for seg in segments {
-            let endAngle = startAngle + (2 * .pi) * (seg.value / total)
-            
-            let path = UIBezierPath(
-                arcCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
-            
-            let layer = CAShapeLayer()
-            layer.path = path.cgPath
-            layer.fillColor = UIColor.clear.cgColor
-            layer.strokeColor = seg.color.cgColor
-            layer.lineWidth = lineWidth
-            layer.lineCap = .butt
-            
-            self.layer.addSublayer(layer)
-            segmentLayers.append(layer)
-        }
-        
-        let hole = UIBezierPath(
-            arcCenter: center, radius: radius - lineWidth / 2, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
-        
-        ringLayer.path = hole.cgPath
-        ringLayer.fillColor = UIColor.systemBackground.cgColor
-        ringLayer.strokeColor = UIColor.clear.cgColor
-        
-        
-    }
-
-    /*
-    // Only override draw() if you perform custom drawing.
-    // An empty implementation adversely affects performance during animation.
-    override func draw(_ rect: CGRect) {
-        // Drawing code
-    }
-    */
-
 }
