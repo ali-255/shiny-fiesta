@@ -4,43 +4,120 @@ trash repo
 
 this was added for trash purposes
 
-PolyTech
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:28:32 Cannot assign value of type 'DelayedRequestsViewController' to type '(any UITableViewDataSource)?'
+import UIKit
+import FirebaseFirestore
 
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:29:30 Cannot assign value of type 'DelayedRequestsViewController' to type '(any UITableViewDelegate)?'
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:40:17 '?' must be followed by a call, member lookup, or subscript
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:40:17 Expression of type '(any ListenerRegistration)?' is unused
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:40:18 Consecutive statements on a line must be separated by ';'
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:40:25 Missing argument for parameter #1 in call
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:43:5 Expected '{' in body of function declaration
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:43:5 Expected 'func' keyword in instance method declaration
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:43:13 Consecutive declarations on a line must be separated by ';'
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:43:14 Expected '(' in argument list of function declaration
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:47:23 Value of type 'Firestore' has no member 'colletion'
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:49:48 Cannot infer type of closure parameter 'snapshot' without a type annotation
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:49:58 Cannot infer type of closure parameter 'error' without a type annotation
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:60:36 Value of type 'Any' has no member 'data'
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:65:24 Cannot find 'status' in scope
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:76:5 Declaration is only valid at file scope
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:84:41 Type 'DelayedRequestsViewController.DelayedRequest' has no member 'subscript'
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequestsViewController.swift:96:23 Cannot find 'DelayedRequests' in scope
-
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequests.storyboard
-/Users/bp-36-212-04/Documents/PolyTech/PolyTech/Ali/DelayedRequests.storyboard “Delayed Requests View Controller“ is unreachable because it has no entry points, and no identifier for runtime access via -[UIStoryboard instantiateViewControllerWithIdentifier:].
+class TechniciansViewController: UITableViewController {
+    
+    private let db = Firestore.firestore()
+    
+    enum Availability: String {
+        case available
+        case busy
+    }
+    
+    struct Technician {
+        let name: String
+        let availability: Availability
+        let tasks: Int
+        let hours: String
+    }
+    
+    private var technicians: [Technician] = []
+    
+    var requestIdToReassign: String?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        tableView.separatorStyle = .none
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 160
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 120, right: 0)
+        tableView.scrollIndicatorInsets = tableView.contentInset
+        
+        startTechniciansListener()
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        technicians.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "TechnicianCardCell", for: indexPath) as? TechnicianCardCell else {
+            return UITableViewCell()
+        }
+        
+        let tech = technicians[indexPath.row]
+        
+        cell.nameLabel.text = tech.name
+        cell.tasksValueLabel.text = "\(tech.tasks)"
+        cell.hoursValueLabel.text = tech.hours
+        
+        switch tech.availability {
+        case .available:
+            cell.statusLabel.text = "Available"
+            cell.statusPillView.backgroundColor = UIColor.systemBlue
+            cell.dotView.backgroundColor = UIColor.systemBlue
+        case .busy:
+            cell.statusLabel.text = "Busy"
+            cell.statusPillView.backgroundColor = UIColor.systemRed
+            cell.dotView.backgroundColor = UIColor.systemRed
+        }
+        
+        return cell
+        
+        /*
+         // MARK: - Navigation
+         
+         // In a storyboard-based application, you will often want to do a little preparation before navigation
+         override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+         // Get the new view controller using segue.destination.
+         // Pass the selected object to the new view controller.
+         }
+         */
+        
+    }
+    
+    private var listener: ListenerRegistration?
+    
+    private func startTechniciansListener() {
+        listener = db.collection("technicians").addSnapshotListener { [weak self] snapshot, error in
+            guard let self else { return }
+            
+            if let error = error {
+                print("❌ technicians listener error:", error)
+                return
+            }
+            
+            let docs = snapshot?.documents ?? []
+            print("✅ technicians docs:", docs.count)
+            
+            self.technicians = docs.compactMap { doc in
+                let data = doc.data()
+                print("DOC", doc.documentID, data)
+                
+                guard
+                    let name = data["name"] as? String,
+                    let availabilityRaw = data["availability"] as? String,
+                    let availability = Availability(rawValue: availabilityRaw),
+                    let tasks = data["tasks"] as? Int,
+                    let hours = data["hours"] as? String
+                else {
+                    print("⚠️ Skipping doc \(doc.documentID) due to missing/wrong fields")
+                    return nil
+                }
+                
+                return Technician(name: name, availability: availability, tasks: tasks, hours: hours)
+            }
+            
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
+        }
+    }
+    
+    deinit {
+        listener?.remove()
+    }
+}
